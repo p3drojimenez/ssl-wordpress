@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+
+  proxy:
+    container_name: proxy-aws
+    image: neilpang/nginx-proxy
+    restart: always
+    network_mode: bridge
+    ports:
+    - 80:80
+    - 443:443
+    volumes:
+      -  /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./proxy/certs:/etc/nginx/certs
+      - ./proxy/acme:/acmecerts
+      - ./proxy/conf.d:/etc/nginx/conf.d
+  mysql:
+    image: mariadb:10
+    network_mode: bridge
+    container_name: server-db
+    restart: on-failure
+    volumes:
+    - ./docker/volumes/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: qwertyuiop
+
+# Wordpress
+  elmetodo:
+    image: wordpress
+    network_mode: bridge
+    container_name: elmetodo-wp
+    restart: on-failure
+    volumes:
+    - ./plugins:/var/www/html/wp-content/plugins/
+    - ./themes:/var/www/html/wp-content/themes/
+    - ./uploads:/var/www/html/wp-content/uploads/
+    environment:
+      WORDPRESS_DB_NAME: elmetodo-db
+      ENABLE_ACME: 'true'
+      VIRTUAL_HOST: elmetodo.docker, elmetodo.es , www.elmetodo.es
+    depends_on:
+    - mysql
+    links:
+    - mysql
